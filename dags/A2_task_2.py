@@ -30,7 +30,7 @@ default_args = {
 dag = DAG(
     'weather_data_pipeline',
     default_args=default_args,
-    description='A DAG to process weather data',
+    description='A DAG to process the zipped weather data',
 )
 
 # Sensor to wait for the archive file to appear
@@ -182,6 +182,7 @@ def get_geomap(file_path):
              | 'ReadCSVFiles' >> beam.Map(read_csv)
              | 'CreateGeomap' >> beam.Map(create_plot)
         )
+    
     
 # Define task for extracting and filtering data
 extract_and_filter_data = PythonOperator(task_id='extract_and_filter_data',

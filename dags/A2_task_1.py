@@ -21,7 +21,7 @@ default_args = {
 dag = DAG(
     'weather_data_extraction_1',  # Name of the DAG
     default_args=default_args,
-    description='A DAG to fetch and process weather data',  # Description of the DAG
+    description='A DAG to fetch and zip weather data',  # Description of the DAG
     schedule=None,  # Schedule for the DAG, set to None for manual triggering
 )
 
@@ -74,6 +74,7 @@ def zip_files(**kwargs):
             else:
                 logging.warning(f"DATE column not found in {file_name}. Skipping the file.")
                 os.remove(f"{download_path}/{file_name}")  # Remove the file if DATE column not found
+
 
 # Define tasks in the DAG
 

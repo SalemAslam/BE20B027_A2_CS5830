@@ -1,50 +1,68 @@
-### The project report is available as a pdf file in this repository
+# Data Engineering Pipeline with Apache Airflow
+---
+Salem Aslam  
+BE20B027
 
-Overview
-========
+## Overview
+This repository contains two Directed Acyclic Graphs (DAGs) designed to automate the extraction and processing of weather data from the National Centers for Environmental Information (NCEI) website. These DAGs are built using Apache Airflow, a platform for programmatically authoring, scheduling, and monitoring workflows.
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+### 1. Weather Data Extraction DAG (`weather_data_extraction_1`)
+- **Description**: Fetches and processes weather data from the NCEI website.
+- **Start Date**: April 14, 2024
 
-Project Contents
-================
+### 2. Weather Data Processing DAG (`weather_data_pipeline`)
+- **Description**: Processes weather data extracted by the first DAG.
+- **Start Date**: April 14, 2024
 
-Your Astro project contains the following files and folders:
+## Workflow Steps
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
-    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://docs.astronomer.io/learn/get-started-with-airflow).
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+### Weather Data Extraction DAG
+1. **Fetch HTML Page (`fetch_page`)**:
+   - Downloads the HTML page containing CSV links from the NCEI website for the specified year (2023).
+   - Executes a curl command using the `BashOperator`.
+   
+2. **Select Random Files (`select_files`)**:
+   - Parses the HTML page, extracts CSV file links, and randomly selects a subset of files.
+   - Utilizes BeautifulSoup for HTML parsing and the random module for file selection.
+   
+3. **Fetch CSV Files (`fetch_files`)**:
+   - Downloads selected CSV files using curl based on the links extracted in the previous step.
+   - Accesses the list of selected files from the XCom system.
+   
+4. **Zip Files (`zip_files`)**:
+   - Zips the downloaded CSV files into a single zip archive.
+   - Uses Python's `zipfile` module to create the zip file.
+   - Removes original CSV files after zipping.
+   
+5. **Move Zip File (`move_zip_file`)**:
+   - Moves the zip archive to a specified directory (`/tmp/new_data_dir`).
+   - Creates the target directory if it doesn't exist.
+   - Utilizes the `BashOperator` for file manipulation.
 
-Deploy Your Project Locally
-===========================
+### Weather Data Processing DAG
+1. **Wait for Archive (`wait_for_archive`)**:
+   - Waits for the archive file (`2020_data.zip`) to appear in the specified directory (`/tmp/new_data_dir`).
+   - Utilizes the `FileSensor` to monitor the file's existence.
+   
+2. **Unzip Archive (`unzip_archive`)**:
+   - Creates a directory for extracted files and unzips the archive into it.
+   - Uses the `BashOperator` to execute shell commands.
+   
+3. **Extract and Filter Data (`extract_and_filter_data`)**:
+   - Extracts and filters data from CSV files using Apache Beam.
+   - Filters columns with names starting with 'Hourly' and keeps essential columns like 'DATE', 'LATITUDE', and 'LONGITUDE'.
+   
+4. **Compute Monthly Averages (`compute_averages`)**:
+   - Computes monthly averages of weather data using Apache Beam.
+   - Groups data by date and calculates the mean of numeric columns.
+   
+5. **Combine Data (`Comb_data_loc`)**:
+   - Combines data from multiple CSV files into one DataFrame.
+   - Identifies common columns and selects a specific month for merging.
+   
+6. **Generate Geomaps (`Geo_map`)**:
+   - Generates geomaps based on the combined data using Apache Beam.
+   - Plots data on a world map using GeoPandas and Matplotlib.
 
-1. Start Airflow on your local machine by running 'astro dev start'.
-
-This command will spin up 4 Docker containers on your machine, each for a different Airflow component:
-
-- Postgres: Airflow's Metadata Database
-- Webserver: The Airflow component responsible for rendering the Airflow UI
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- Triggerer: The Airflow component responsible for triggering deferred tasks
-
-2. Verify that all 4 Docker containers were created by running 'docker ps'.
-
-Note: Running 'astro dev start' will start your project with the Airflow Webserver exposed at port 8080 and Postgres exposed at port 5432. If you already have either of those ports allocated, you can either [stop your existing Docker containers or change the port](https://docs.astronomer.io/astro/test-and-troubleshoot-locally#ports-are-not-available).
-
-3. Access the Airflow UI for your local Airflow project. To do so, go to http://localhost:8080/ and log in with 'admin' for both your Username and Password.
-
-You should also be able to access your Postgres Database at 'localhost:5432/postgres'.
-
-Deploy Your Project to Astronomer
-=================================
-
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://docs.astronomer.io/cloud/deploy-code/
-
-Contact
-=======
-
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+## Conclusion
+The Weather Data Extraction and Processing DAGs automate the retrieval, filtering, and analysis of weather data, enabling efficient data-driven decision-making in various domains. These DAGs offer scalability, reliability, and reproducibility, making them valuable tools for weather data management and analysis.
